@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Album CB</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background-color: #444;
+      color: #eee;
+    }
+
+    header {
+      background-color: #111;
+      padding: 20px;
+      text-align: center;
+      font-size: 2em;
+      font-weight: bold;
+    }
+
+    #dashboard-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #444;
+      color: #ccc;
+      border: none;
+      padding: 5px 10px;
+      cursor: pointer;
+    }
+
+    #password-container, #dashboard {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 70vh;
+    }
+
+    #password-container input {
+      padding: 10px;
+      font-size: 16px;
+    }
+
+    #password-container button {
+      padding: 10px;
+      font-size: 16px;
+      margin-left: 10px;
+    }
+
+    #notes-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+      padding: 20px;
+    }
+
+    .note {
+      background-color: #222;
+      border: 1px solid #555;
+      padding: 10px;
+      width: 300px;
+      max-width: 90%;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .note textarea {
+      resize: none;
+      width: 100%;
+      background: #333;
+      color: #fff;
+      border: none;
+      padding: 5px;
+      font-family: sans-serif;
+    }
+
+    .note img, .note video {
+      max-width: 100%;
+      height: auto;
+    }
+
+    #add-form {
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    #add-form input[type="file"] {
+      margin-right: 10px;
+    }
+
+    @media (max-width: 600px) {
+      .note {
+        width: 90%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    Album CB
+    <button id="dashboard-btn" onclick="showPasswordPrompt()">Tableau de bord</button>
+  </header>
+
+  <div id="password-container">
+    <input type="password" id="password-input" placeholder="Mot de passe admin" />
+    <button onclick="checkPassword()">Valider</button>
+  </div>
+
+  <div id="dashboard" style="display:none;">
+    <div id="add-form">
+      <input type="file" id="file-input" accept="image/*,video/*" />
+      <button onclick="addNote()">Ajouter</button>
+    </div>
+  </div>
+
+  <div id="notes-container"></div>
+
+  <script>
+    const passwordContainer = document.getElementById("password-container");
+    const dashboard = document.getElementById("dashboard");
+    const notesContainer = document.getElementById("notes-container");
+    const password = "cb2025";
+
+    function showPasswordPrompt() {
+      passwordContainer.style.display = "flex";
+      dashboard.style.display = "none";
+    }
+
+    function checkPassword() {
+      const input = document.getElementById("password-input").value;
+      if (input === password) {
+        passwordContainer.style.display = "none";
+        dashboard.style.display = "block";
+      } else {
+        alert("Mot de passe incorrect.");
+      }
+    }
+
+    function loadNotes() {
+      const savedNotes = JSON.parse(localStorage.getItem("notesCB") || "[]");
+      notesContainer.innerHTML = "";
+      savedNotes.forEach((note, i) => {
+        const div = document.createElement("div");
+        div.className = "note";
+
+        let media = "";
+        if (note.type === "image") {
+          media = `<img src="${note.url}" alt="Image" />`;
+        } else if (note.type === "video") {
+          media = `<video controls src="${note.url}"></video>`;
+        }
+
+        div.innerHTML = `
+          ${media}
+          <textarea onchange="updateNote(${i}, this.value)">${note.text}</textarea>
+        `;
+        notesContainer.appendChild(div);
+      });
+    }
+
+    function updateNote(index, newText) {
+      const notes = JSON.parse(localStorage.getItem("notesCB") || "[]");
+      notes[index].text = newText;
+      localStorage.setItem("notesCB", JSON.stringify(notes));
+    }
+
+    function addNote() {
+      const fileInput = document.getElementById("file-input");
+      const file = fileInput.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const url = e.target.result;
+        const type = file.type.startsWith("image") ? "image" :
+                     file.type.startsWith("video") ? "video" : null;
+
+        if (!type) {
+          alert("Format non supporté");
+          return;
+        }
+
+        const notes = JSON.parse(localStorage.getItem("notesCB") || "[]");
+        notes.push({ type, url, text: "" });
+        localStorage.setItem("notesCB", JSON.stringify(notes));
+        loadNotes();
+      };
+
+      reader.readAsDataURL(file);
+    }
+
+    loadNotes();
+  </script>
+</body>
+</html>
