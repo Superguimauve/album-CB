@@ -1,227 +1,30 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <title>Album CB</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            background-color: #f4f4f4;
-        }
-        header {
-            background-color: #007bff;
-            color: white;
-            text-align: center;
-            padding: 30px 20px;
-        }
-        .admin-button {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            background-color: #333;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        .container {
-            max-width: 1200px;
-            margin: auto;
-            padding: 20px;
-        }
-        .form-container input, .form-container textarea, .form-container button {
-            padding: 10px;
-            margin: 5px;
-        }
-        .posts {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-            margin-top: 20px;
-        }
-        .post {
-            background-color: white;
-            border-radius: 5px;
-            padding: 15px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            flex: 1 1 calc(33% - 20px);
-            box-sizing: border-box;
-        }
-        .post img, .post video {
-            max-width: 100%;
-            margin-top: 10px;
-        }
-        .post-buttons {
-            margin-top: 10px;
-        }
-        .post-buttons button {
-            margin-right: 5px;
-        }
-    
-@media (max-width: 768px) {
-    .form-container input, .form-container textarea, .form-container button {
-        width: 100%;
-        box-sizing: border-box;
-    }
-    .post {
-        flex: 1 1 100%;
-    }
-    .admin-button {
-        bottom: 15px;
-        right: 15px;
-        left: auto;
-        width: auto;
-        padding: 12px 20px;
-        font-size: 16px;
-    }
-}
-
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Album CB</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-    <header>
-        <h1>Album CB</h1>
-        <p>Ajoute et organise tes notes, photos ou vidéos librement !</p>
-    </header>
+  <header>
+    <h1>Album CB</h1>
+    <button id="dashboard-btn">Tableau de bord</button>
+  </header>
 
-    <div class="container">
-        <div id="admin-form" class="form-container" style="display:none;">
-            <input type="text" id="title" placeholder="Titre">
-            <textarea id="content" placeholder="Contenu (optionnel)"></textarea>
-            <input type="file" id="media">
-            <button onclick="addPost()">Ajouter</button>
-        </div>
+  <main id="note-container"></main>
 
-        <div class="posts" id="postsContainer">
-            <!-- Les publications s'afficheront ici -->
-        </div>
-    </div>
+  <div id="admin-panel" style="display: none;">
+    <h2>Mode Admin</h2>
+    <input type="file" id="fileInput" accept="image/*,video/*" multiple />
+    <button onclick="addFiles()">Ajouter</button>
+  </div>
 
-    <button class="admin-button" onclick="toggleAdmin()">Tableau de bord</button>
+  <div id="password-popup">
+    <input type="password" id="password-input" placeholder="Mot de passe admin">
+    <button onclick="checkPassword()">Valider</button>
+  </div>
 
-    <script>
-        let adminMode = false;
-        const adminPassword = "cb2025";
-
-        function toggleAdmin() {
-            if (!adminMode) {
-                const pwd = prompt("Mot de passe admin :");
-                if (pwd === adminPassword) {
-                    adminMode = true;
-                    document.getElementById("admin-form").style.display = "block";
-                } else {
-                    alert("Mot de passe incorrect.");
-                    return;
-                }
-            } else {
-                adminMode = false;
-                document.getElementById("admin-form").style.display = "none";
-            }
-            renderPosts();
-        }
-
-        function addPost() {
-            const title = document.getElementById("title").value;
-            const content = document.getElementById("content").value;
-            const media = document.getElementById("media").files[0];
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const posts = JSON.parse(localStorage.getItem("posts") || "[]");
-                posts.push({ title, content, mediaData: e.target.result, mediaType: media.type });
-                localStorage.setItem("posts", JSON.stringify(posts));
-                renderPosts();
-                document.getElementById("title").value = "";
-                document.getElementById("content").value = "";
-                document.getElementById("media").value = "";
-            };
-
-            if (media) {
-                reader.readAsDataURL(media);
-            } else {
-                const posts = JSON.parse(localStorage.getItem("posts") || "[]");
-                posts.push({ title, content, mediaData: "", mediaType: "" });
-                localStorage.setItem("posts", JSON.stringify(posts));
-                renderPosts();
-            }
-        }
-
-        function renderPosts() {
-            const container = document.getElementById("postsContainer");
-            container.innerHTML = "";
-            const posts = JSON.parse(localStorage.getItem("posts") || "[]");
-
-            posts.forEach((post, index) => {
-                const div = document.createElement("div");
-                div.className = "post";
-
-                const title = document.createElement("h3");
-                title.textContent = post.title;
-
-                const content = document.createElement("p");
-                content.textContent = post.content;
-
-                div.appendChild(title);
-                div.appendChild(content);
-
-                if (post.mediaData) {
-                    if (post.mediaType.startsWith("image/")) {
-                        const img = document.createElement("img");
-                        img.src = post.mediaData;
-                        div.appendChild(img);
-                    } else if (post.mediaType.startsWith("video/")) {
-                        const video = document.createElement("video");
-                        video.src = post.mediaData;
-                        video.controls = true;
-                        div.appendChild(video);
-                    }
-                }
-
-                if (adminMode) {
-                    const buttonsDiv = document.createElement("div");
-                    buttonsDiv.className = "post-buttons";
-
-                    const editBtn = document.createElement("button");
-                    editBtn.textContent = "Modifier";
-                    editBtn.onclick = () => editPost(index);
-
-                    const deleteBtn = document.createElement("button");
-                    deleteBtn.textContent = "Supprimer";
-                    deleteBtn.onclick = () => deletePost(index);
-
-                    buttonsDiv.appendChild(editBtn);
-                    buttonsDiv.appendChild(deleteBtn);
-                    div.appendChild(buttonsDiv);
-                }
-
-                container.appendChild(div);
-            });
-        }
-
-        function editPost(index) {
-            const posts = JSON.parse(localStorage.getItem("posts") || "[]");
-            const post = posts[index];
-            const newTitle = prompt("Nouveau titre :", post.title);
-            const newContent = prompt("Nouveau contenu :", post.content);
-
-            if (newTitle !== null) post.title = newTitle;
-            if (newContent !== null) post.content = newContent;
-
-            localStorage.setItem("posts", JSON.stringify(posts));
-            renderPosts();
-        }
-
-        function deletePost(index) {
-            const posts = JSON.parse(localStorage.getItem("posts") || "[]");
-            posts.splice(index, 1);
-            localStorage.setItem("posts", JSON.stringify(posts));
-            renderPosts();
-        }
-
-        renderPosts();
-    </script>
+  <script src="script.js"></script>
 </body>
 </html>
